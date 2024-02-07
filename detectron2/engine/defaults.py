@@ -294,10 +294,11 @@ class DefaultPredictor:
         self.input_format = cfg.INPUT.FORMAT
         assert self.input_format in ["RGB", "BGR"], self.input_format
 
-    def __call__(self, original_image):
+    def __call__(self, original_image, exemplars=None):
         """
         Args:
             original_image (np.ndarray): an image of shape (H, W, C) (in BGR order).
+            exemplars (list[list]): exemplar bbox list (x, y, x, y)
 
         Returns:
             predictions (dict):
@@ -315,6 +316,10 @@ class DefaultPredictor:
             image.to(self.cfg.MODEL.DEVICE)
 
             inputs = {"image": image, "height": height, "width": width}
+
+            if exemplars:
+                scaler = image.shape[1] / height
+                inputs["exemplars"] = torch.tensor(exemplars) * scaler
 
             predictions = self.model([inputs])[0]
             return predictions
