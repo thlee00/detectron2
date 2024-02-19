@@ -276,7 +276,6 @@ class RPN(nn.Module):
 
         ret["pre_nms_topk"] = (cfg.MODEL.RPN.PRE_NMS_TOPK_TRAIN, cfg.MODEL.RPN.PRE_NMS_TOPK_TEST)
         ret["post_nms_topk"] = (cfg.MODEL.RPN.POST_NMS_TOPK_TRAIN, cfg.MODEL.RPN.POST_NMS_TOPK_TEST)
-
         ret["anchor_generator"] = build_anchor_generator(cfg, [input_shape[f] for f in in_features])
         ret["anchor_matcher"] = Matcher(
             cfg.MODEL.RPN.IOU_THRESHOLDS, cfg.MODEL.RPN.IOU_LABELS, allow_low_quality_matches=True
@@ -498,6 +497,7 @@ class RPN(nn.Module):
         # The proposals are treated as fixed for joint training with roi heads.
         # This approach ignores the derivative w.r.t. the proposal boxes’ coordinates that
         # are also network responses.
+        print("proepeiwp",  self.post_nms_topk[self.training])
         with torch.no_grad():
             pred_proposals = self._decode_proposals(anchors, pred_anchor_deltas)
             return find_top_rpn_proposals(
