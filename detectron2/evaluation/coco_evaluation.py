@@ -405,6 +405,8 @@ def instances_to_coco_json(instances, img_id):
         return []
 
     boxes = instances.pred_boxes.tensor.numpy()
+    if boxes is None:
+        boxes = instances.proposal_boxes.tensor.numpy()
     boxes = BoxMode.convert(boxes, BoxMode.XYXY_ABS, BoxMode.XYWH_ABS)
     boxes = boxes.tolist()
     scores = instances.scores.tolist()

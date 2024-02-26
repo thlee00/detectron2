@@ -57,6 +57,7 @@ def find_top_rpn_proposals(
             stores post_nms_topk object proposals for image i, sorted by their
             objectness score in descending order.
     """
+    print("eiwiiowo", pre_nms_topk)
     num_images = len(image_sizes)
     device = (
         proposals[0].device

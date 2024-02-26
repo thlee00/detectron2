@@ -77,7 +77,7 @@ class VideoVisualizer:
         boxes = predictions.pred_boxes.tensor.numpy() if predictions.has("pred_boxes") else None
         if boxes is None:
             boxes = predictions.proposal_boxes.tensor.numpy() if predictions.has("proposal_boxes") else None
-        scores = predictions.scores if predictions.has("scores") else None
+        scores = predictions.scores if predictions.has("scores") else predictions.objectness_logits if predictions.has("objectness_logits") else None
         classes = predictions.pred_classes.numpy() if predictions.has("pred_classes") else None
         keypoints = predictions.pred_keypoints if predictions.has("pred_keypoints") else None
         colors = predictions.COLOR if predictions.has("COLOR") else [None] * len(predictions)
@@ -102,10 +102,16 @@ class VideoVisualizer:
                 colors = self._assign_colors_by_id(predictions)
             else:
                 # ToDo: clean old assign color method and use a default tracker to assign id
-                detected = [
-                    _DetectedInstance(classes[i], boxes[i], mask_rle=None, color=colors[i], ttl=8)
-                    for i in range(num_instances)
-                ]
+                if classes is None:
+                    detected = [
+                        _DetectedInstance(0, boxes[i], mask_rle=None, color=colors[i], ttl=8)
+                        for i in range(num_instances)
+                    ]
+                else:    
+                    detected = [
+                        _DetectedInstance(classes[i], boxes[i], mask_rle=None, color=colors[i], ttl=8)
+                        for i in range(num_instances)
+                    ]
                 colors = self._assign_colors(detected)
 
         labels = _create_text_labels(None, scores, self.metadata.get("thing_classes", None))

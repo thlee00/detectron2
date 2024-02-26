@@ -284,6 +284,10 @@ class DefaultPredictor:
         if len(cfg.DATASETS.TEST):
             self.metadata = MetadataCatalog.get(cfg.DATASETS.TEST[0])
 
+        # module = torch.load(cfg.MODEL.WEIGHTS)
+        # # print(module['state_dict'].keys())
+        # print(module['model'].keys())
+
         checkpointer = DetectionCheckpointer(self.model)
         checkpointer.load(cfg.MODEL.WEIGHTS)
 
@@ -293,6 +297,8 @@ class DefaultPredictor:
 
         self.input_format = cfg.INPUT.FORMAT
         assert self.input_format in ["RGB", "BGR"], self.input_format
+
+        print(self.model)
 
     def __call__(self, original_image, exemplars=None):
         """
