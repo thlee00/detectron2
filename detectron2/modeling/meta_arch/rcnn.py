@@ -203,9 +203,9 @@ class GeneralizedRCNN(nn.Module):
         
         if len(batched_inputs) == 1: # batch size 1
             if 'exemplars' in batched_inputs[0]:
-                bbox = batched_inputs[0]['bbox']
+                bboxs = batched_inputs[0]['bboxs']
             else:
-                bbox = None
+                bboxs = None
 
         images, exemplars = self.preprocess_image(batched_inputs)
         features = self.backbone(images.tensor)
@@ -218,7 +218,7 @@ class GeneralizedRCNN(nn.Module):
                 assert "proposals" in batched_inputs[0]
                 proposals = [x["proposals"].to(self.device) for x in batched_inputs]
 
-            results, _ = self.roi_heads(images, features, proposals, exempalr_features, bbox, None)
+            results, _ = self.roi_heads(images, features, proposals, exempalr_features, bboxs, None)
         else:
             detected_instances = [x.to(self.device) for x in detected_instances]
             results = self.roi_heads.forward_with_given_boxes(features, detected_instances)

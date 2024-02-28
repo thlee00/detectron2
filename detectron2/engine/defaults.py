@@ -331,6 +331,7 @@ class DefaultPredictor:
             exemplars = exemplars.tolist()
             
             ex_imgs = []
+            exemplars_list = []
             for i, exemplar in enumerate(exemplars):
                 tf_toPIL = tf.ToPILImage()
                 tf_toTensor = tf.ToTensor()
@@ -339,7 +340,7 @@ class DefaultPredictor:
                 
                 temp_img = temp_img.crop(exemplar)
                 
-                print(temp_img.size)
+                print(temp_img.size, exemplar)
 
                 rot_img = tf_toTensor(temp_img.rotate(45))
                 lr_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_LEFT_RIGHT))
@@ -347,8 +348,9 @@ class DefaultPredictor:
                 tb_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_TOP_BOTTOM))
                 temp_img = tf_toTensor(temp_img)
                 ex_imgs.extend([temp_img, rot_img, lr_flip_img, tb_flip_img])
+                exemplars_list.extend([exemplar] * 4)
 
-            inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bbox": exemplars}
+            inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bboxs": exemplars_list}
 
             predictions = self.model([inputs])[0]
             return predictions
