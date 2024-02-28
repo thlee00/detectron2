@@ -335,14 +335,17 @@ class DefaultPredictor:
             for i, exemplar in enumerate(exemplars):
                 tf_toPIL = tf.ToPILImage()
                 tf_toTensor = tf.ToTensor()
+                tf_randRot = tf.RandomRotation(degrees=(0, 360))
                 temp_img = tf_toPIL(image)
-                temp_img.save('test.png')
+
                 
                 temp_img = temp_img.crop(exemplar)
                 
                 print(temp_img.size, exemplar)
 
-                rot_img = tf_toTensor(temp_img.rotate(45))
+                rot_img = tf_randRot(img=temp_img)
+                rot_img.save('test.png')
+                rot_img = tf_toTensor(rot_img)
                 lr_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_LEFT_RIGHT))
                 
                 tb_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_TOP_BOTTOM))
