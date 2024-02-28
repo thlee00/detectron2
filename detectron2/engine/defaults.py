@@ -317,8 +317,8 @@ class DefaultPredictor:
                 # whether the model expects BGR inputs or RGB
                 original_image = original_image[:, :, ::-1]
             height, width = original_image.shape[:2]
-            image_bf = self.aug.get_transform(original_image).apply_image(original_image)
-            image = torch.as_tensor(image_bf.astype("float32").transpose(2, 0, 1))
+            image = self.aug.get_transform(original_image).apply_image(original_image)
+            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
             image.to(self.cfg.MODEL.DEVICE)
             
             from PIL import Image
@@ -328,22 +328,19 @@ class DefaultPredictor:
             scaler = image.shape[1] / height
             exemplars = torch.tensor(exemplars, dtype=torch.float32)
             exemplars = exemplars * scaler
+            exemplars = exemplars.tolist()
             
-            exemplars_list = torch.zeros_like(exemplars)
-            exemplars_list[:, 2] = exemplars[:, 2] - exemplars[:, 0]
-            exemplars_list[:, 3] = exemplars[:, 3] - exemplars[:, 1]
-            
-            print(exemplars_list)
-            
-            exemplars_list = exemplars_list.tolist()
             ex_imgs = []
-            for i, exemplar in enumerate(exemplars.tolist()):
+            for i, exemplar in enumerate(exemplars):
                 tf_toPIL = tf.ToPILImage()
                 tf_toTensor = tf.ToTensor()
-                temp_img = tf_toPIL(image_bf)
+                temp_img = tf_toPIL(image)
                 temp_img.save('test.png')
+                
                 temp_img = temp_img.crop(exemplar)
                 
+                print(temp_img.size)
+
                 rot_img = tf_toTensor(temp_img.rotate(45))
                 lr_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_LEFT_RIGHT))
                 
@@ -351,7 +348,7 @@ class DefaultPredictor:
                 temp_img = tf_toTensor(temp_img)
                 ex_imgs.extend([temp_img, rot_img, lr_flip_img, tb_flip_img])
 
-            inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bbox": exemplars_list}
+            inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bbox": exemplars}
 
             predictions = self.model([inputs])[0]
             return predictions
