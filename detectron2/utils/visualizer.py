@@ -392,7 +392,9 @@ class Visualizer:
         Returns:
             output (VisImage): image object with visualizations.
         """
-        boxes = predictions.pred_boxes if predictions.has("pred_boxes") else None
+        boxes = predictions.pred_boxes.tensor.numpy() if predictions.has("pred_boxes") else None
+        if boxes is None:
+            boxes = predictions.proposal_boxes.tensor.numpy() if predictions.has("proposal_boxes") else None
         scores = predictions.scores if predictions.has("scores") else None
         classes = predictions.pred_classes.tolist() if predictions.has("pred_classes") else None
         labels = _create_text_labels(classes, scores, self.metadata.get("thing_classes", None))
@@ -688,7 +690,10 @@ class Visualizer:
         for i in range(num_instances):
             color = assigned_colors[i]
             if boxes is not None:
-                self.draw_box(boxes[i], edge_color=color)
+                if True: ### for circle
+                    self.draw_center(boxes[i], color=color)
+                else:
+                    self.draw_box(boxes[i], edge_color=color)
 
             if masks is not None:
                 for segment in masks[i].polygons:
@@ -698,8 +703,8 @@ class Visualizer:
                 # first get a box
                 if boxes is not None:
                     x0, y0, x1, y1 = boxes[i]
-                    text_pos = (x0, y0)  # if drawing boxes, put text on the box corner.
-                    horiz_align = "left"
+                    text_pos = ((x0 + x1) // 2, (y0 + y1) // 2)  # if drawing boxes, put text on the box corner.
+                    horiz_align = "center"
                 elif masks is not None:
                     # skip small mask without polygon
                     if len(masks[i].polygons) == 0:
@@ -891,6 +896,32 @@ class Visualizer:
             color=color,
             zorder=10,
             rotation=rotation,
+        )
+        return self.output
+    
+    def draw_center(self, box_coord, color="g"):
+        """
+        Args:
+            box_coord (tuple): a tuple containing x0, y0, x1, y1 coordinates, where x0 and y0
+                are the coordinates of the image's top left corner. x1 and y1 are the
+                coordinates of the image's bottom right corner.
+            color: color of the outline of the box. Refer to `matplotlib.colors`
+                for full list of formats that are accepted.
+
+        Returns:
+            output (VisImage): image object with center circle drawn.
+        """
+        x0, y0, x1, y1 = box_coord
+        circle_coord = ((x0 + x1)//2, (y0 + y1)//2)
+        
+        width = x1 - x0
+        height = y1 - y0
+        
+        radius = min(width, height) // 4
+        linewidth = max(self._default_font_size / 4, 1)
+        
+        self.output.ax.add_patch(
+            mpl.patches.Circle(circle_coord, radius=radius, fill=False, linewidth=linewidth * self.output.scale, color=color)
         )
         return self.output
 
