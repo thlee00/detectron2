@@ -337,8 +337,6 @@ class DefaultPredictor:
                 tf_toTensor = tf.ToTensor()
                 tf_randRot = tf.RandomRotation(degrees=(0, 360))
                 temp_img = tf_toPIL(image)
-
-                
                 temp_img = temp_img.crop(exemplar)
                 
                 print(temp_img.size, exemplar)
@@ -351,7 +349,7 @@ class DefaultPredictor:
                 tb_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_TOP_BOTTOM))
                 temp_img = tf_toTensor(temp_img)
                 ex_imgs.extend([temp_img, rot_img, lr_flip_img, tb_flip_img])
-                exemplars_list.extend([exemplar] * 4)
+                exemplars_list.extend([exemplar])
 
             inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bboxs": exemplars_list}
 

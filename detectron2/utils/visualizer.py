@@ -917,7 +917,7 @@ class Visualizer:
         width = x1 - x0
         height = y1 - y0
         
-        radius = min(width, height) // 4
+        radius = max(width, height) // 4
         linewidth = max(self._default_font_size / 4, 1)
         
         self.output.ax.add_patch(
