@@ -214,10 +214,10 @@ class GeneralizedRCNN(nn.Module):
         if detected_instances is None:
             if self.proposal_generator is not None:
                 from detectron2.structures import Boxes
-                ori_rois = [Boxes(torch.tensor(bboxs).cuda())]
-                _features = [features[f] for f in self.roi_heads.box_in_features]
-                ori_ex_roi_feat = self.roi_heads.box_pooler(_features, ori_rois)
-                proposals, _ = self.proposal_generator(images, features, None, ori_ex_roi_feat)
+                # ori_rois = [Boxes(torch.tensor(bboxs).cuda())]
+                # _features = [features[f] for f in self.roi_heads.box_in_features]
+                # ori_ex_roi_feat = self.roi_heads.box_pooler(_features, ori_rois)
+                proposals, _ = self.proposal_generator(images, features, None, None)
                 # print(proposals[0].scores)
             else:
                 assert "proposals" in batched_inputs[0]

@@ -321,9 +321,11 @@ class DefaultPredictor:
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
             image.to(self.cfg.MODEL.DEVICE)
             
-            from PIL import Image
+            # from PIL import Image
             import numpy as np
             import torchvision.transforms as tf
+            import albumentations as A
+            import cv2
             
             scaler = image.shape[1] / height
             exemplars = torch.tensor(exemplars, dtype=torch.float32)
@@ -332,25 +334,43 @@ class DefaultPredictor:
             
             ex_imgs = []
             exemplars_list = []
-            for i, exemplar in enumerate(exemplars):
-                tf_toPIL = tf.ToPILImage()
-                tf_toTensor = tf.ToTensor()
-                tf_randRot = tf.RandomRotation(degrees=(0, 360))
-                temp_img = tf_toPIL(image)
-                temp_img = temp_img.crop(exemplar)
+            
+            tf_toPIL = tf.ToPILImage()
+            tf_toTensor = tf.ToTensor()
+            
+            temp_img = tf_toPIL(image)
+            temp_img = np.array(temp_img)
                 
-                print(temp_img.size, exemplar)
-
-                rot_img = tf_randRot(img=temp_img)
-                rot_img.save('test.png')
-                rot_img = tf_toTensor(rot_img)
-                lr_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_LEFT_RIGHT))
+            # print('ori bbox', exemplars[:3])
+            ex_imgs.append(image)
+            exemplars_list.append(exemplars)
+            
+            rot_transformed = A.Compose([
+                A.Rotate(p=1, limit=180, border_mode=cv2.BORDER_REPLICATE),
+            ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
+            rot_img = rot_transformed(image=temp_img, factor=1, bboxes=exemplars)
+            # print("rot box", rot_img['bboxes'][:3])
+            ex_imgs.append(tf_toTensor(rot_img['image']))
+            exemplars_list.append(rot_img['bboxes'])
                 
-                tb_flip_img = tf_toTensor(temp_img.transpose(Image.FLIP_TOP_BOTTOM))
-                temp_img = tf_toTensor(temp_img)
-                ex_imgs.extend([temp_img, rot_img, lr_flip_img, tb_flip_img])
-                exemplars_list.extend([exemplar])
-
+            hor_transformed = A.Compose([
+                A.HorizontalFlip(p=1),
+            ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
+            hor_img = hor_transformed(image=temp_img, bboxes=exemplars)
+            # print("hor_img box", hor_img['bboxes'][:3])
+            ex_imgs.append(tf_toTensor(hor_img['image']))
+            exemplars_list.append(hor_img['bboxes'])
+                
+            ver_transformed = A.Compose([
+                A.VerticalFlip(p=1),
+            ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
+            ver_img = ver_transformed(image=temp_img, bboxes=exemplars)
+            # print("ver_img box", ver_img['bboxes'][:3])
+            ex_imgs.append(tf_toTensor(ver_img['image']))
+            exemplars_list.append(ver_img['bboxes'])
+            
+            # print(exemplars_list)
+            
             inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bboxs": exemplars_list}
 
             predictions = self.model([inputs])[0]
