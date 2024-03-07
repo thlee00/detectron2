@@ -245,6 +245,7 @@ class GeneralizedRCNN(nn.Module):
             padding_constraints=self.backbone.padding_constraints,
         )
         
+        ### mod: 5. preprocess augmented image
         for x in batched_inputs:
             exemplars = [self._move_to_current_device(exemplar) for exemplar in x["exemplars"]]
         exemplars = [(x - self.pixel_mean) / self.pixel_std for x in exemplars]
