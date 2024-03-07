@@ -374,7 +374,7 @@ class DefaultPredictor:
             # ex_imgs.append(tf_toTensor(ver_img['image']))
             # exemplars_list.append(ver_img['bboxes'])
             
-            print("num of ex", len(exemplars_list))
+            print("num of ex", len(exemplars_list[0]))
             
             inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bboxs": exemplars_list}
 
