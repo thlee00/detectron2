@@ -202,28 +202,28 @@ class GeneralizedRCNN(nn.Module):
         assert not self.training
         
         if len(batched_inputs) == 1: # batch size 1
-            if 'exemplars' in batched_inputs[0]:
+            if 'bboxs' in batched_inputs[0]:
                 bboxs = batched_inputs[0]['bboxs']
             else:
                 bboxs = None
 
         images, exemplars = self.preprocess_image(batched_inputs)
         features = self.backbone(images.tensor)
-        exempalr_features = self.backbone(exemplars.tensor)
+        exemplar_features = self.backbone(exemplars.tensor)         ### mod: 6. extract augmented image feature
 
         if detected_instances is None:
             if self.proposal_generator is not None:
-                from detectron2.structures import Boxes
+                # from detectron2.structures import Boxes
                 # ori_rois = [Boxes(torch.tensor(bboxs).cuda())]
                 # _features = [features[f] for f in self.roi_heads.box_in_features]
                 # ori_ex_roi_feat = self.roi_heads.box_pooler(_features, ori_rois)
-                proposals, _ = self.proposal_generator(images, features, None, None)
-                # print(proposals[0].scores)
+                proposals, _ = self.proposal_generator(images, features, gt_instances=None, bboxs=None)
             else:
                 assert "proposals" in batched_inputs[0]
                 proposals = [x["proposals"].to(self.device) for x in batched_inputs]
 
-            results, _ = self.roi_heads(images, features, proposals, exempalr_features, bboxs, None)
+            ### mod: 7. roi head
+            results, _ = self.roi_heads(images, features, proposals, exemplar_features, bboxs, targets=None)
         else:
             detected_instances = [x.to(self.device) for x in detected_instances]
             results = self.roi_heads.forward_with_given_boxes(features, detected_instances)
