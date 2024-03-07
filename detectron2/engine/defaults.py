@@ -355,6 +355,7 @@ class DefaultPredictor:
                 
             hor_transformed = A.Compose([
                 A.HorizontalFlip(p=1),
+                A.Rotate(p=1, limit=180, border_mode=cv2.BORDER_REPLICATE),
             ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
             hor_img = hor_transformed(image=temp_img, bboxes=exemplars)
             # print("hor_img box", hor_img['bboxes'][:3])
@@ -363,6 +364,7 @@ class DefaultPredictor:
                 
             ver_transformed = A.Compose([
                 A.VerticalFlip(p=1),
+                A.Rotate(p=1, limit=180, border_mode=cv2.BORDER_REPLICATE),
             ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
             ver_img = ver_transformed(image=temp_img, bboxes=exemplars)
             # print("ver_img box", ver_img['bboxes'][:3])
