@@ -403,6 +403,7 @@ class DefaultPredictor:
             
 
             print("num of ex", len(exemplars_list[0]))
+            print(ex_imgs[0].max(),ex_imgs[0].min())
             import torchvision
             for i, img in enumerate(ex_imgs):
                 torchvision.utils.save_image(img, f'aug_{i}.png')
