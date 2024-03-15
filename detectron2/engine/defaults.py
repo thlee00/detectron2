@@ -317,15 +317,96 @@ class DefaultPredictor:
                 # whether the model expects BGR inputs or RGB
                 original_image = original_image[:, :, ::-1]
             height, width = original_image.shape[:2]
-            image = self.aug.get_transform(original_image).apply_image(original_image)
-            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+            image_np = self.aug.get_transform(original_image).apply_image(original_image)
+            image = torch.as_tensor(image_np.astype("float32").transpose(2, 0, 1))
             image.to(self.cfg.MODEL.DEVICE)
+        
+            scaler = image.shape[1] / height
+            exemplars = torch.tensor(exemplars, dtype=torch.float32)
+            exemplars = exemplars * scaler
+            exemplars = exemplars.tolist()
+            
+            
+            ### mod: 4. for augmentation
+            import numpy as np
+            import torchvision.transforms as tf
+            import albumentations as A
+            import cv2
+            
+            ex_imgs = []
+            exemplars_list = []
+            
+            tf_toPIL = tf.ToPILImage()
+            tf_toTensor = tf.ToTensor()
+            
+            ### ori exemplar
+            ex_imgs.append(image)
+            exemplars_list.append(exemplars)
+            
+            rot_input = T.AugInput(image=image_np, boxes=exemplars)
+            rot_transformed = T.AugmentationList([
+                T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
+            ])
+            rot_img = rot_transformed(rot_input)
+            print("rot sahpe", rot_input.image.astype("float32").shape)
+            ex_imgs.append(torch.as_tensor(rot_input.image.astype("float32").transpose(2, 0, 1)))
+            exemplars_list.append(rot_input.boxes)
+            
+            hor_input = T.AugInput(image=image_np, boxes=exemplars)
+            hor_transformed = T.AugmentationList([
+                T.RandomFlip(prob=1, horizontal=True),
+                T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
+            ])
+            hor_img = hor_transformed(hor_input)
+            ex_imgs.append(torch.as_tensor(hor_input.image.astype("float32").transpose(2, 0, 1)))
+            exemplars_list.append(hor_input.boxes)
+            
+            ver_input = T.AugInput(image=image_np, boxes=exemplars)
+            ver_transformed = T.AugmentationList([
+                T.RandomFlip(prob=1, vertical=True, horizontal=False),
+                T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
+            ])
+            ver_img = ver_transformed(ver_input)
+            ex_imgs.append(torch.as_tensor(ver_input.image.astype("float32").transpose(2, 0, 1)))
+            exemplars_list.append(ver_input.boxes)
+            
+            # temp_img = np.array(tf_toPIL(image))
+            
+            # ### rot exemplar
+            # rot_transformed = A.Compose([
+            #     A.Rotate(p=1, limit=180, border_mode=cv2.BORDER_REPLICATE),
+            # ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
+            # rot_img = rot_transformed(image=temp_img, factor=1, bboxes=exemplars)
+            # # print("rot box", rot_img['bboxes'][:3])
+            # ex_imgs.append(tf_toTensor(rot_img['image']))
+            # exemplars_list.append(rot_img['bboxes'])
 
-            inputs = {"image": image, "height": height, "width": width}
+            # ### horizontal & rot exemplar
+            # hor_transformed = A.Compose([
+            #     A.HorizontalFlip(p=1),
+            #     A.Rotate(p=1, limit=180, border_mode=cv2.BORDER_REPLICATE),
+            # ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
+            # hor_img = hor_transformed(image=temp_img, bboxes=exemplars)
+            # # print("hor_img box", hor_img['bboxes'][:3])
+            # ex_imgs.append(tf_toTensor(hor_img['image']))
+            # exemplars_list.append(hor_img['bboxes'])
+            
+            # ### vertical & rot exemplar
+            # ver_transformed = A.Compose([
+            #     A.VerticalFlip(p=1),
+            #     A.Rotate(p=1, limit=180, border_mode=cv2.BORDER_REPLICATE),
+            # ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=[]))
+            # ver_img = ver_transformed(image=temp_img, bboxes=exemplars)
+            # # print("ver_img box", ver_img['bboxes'][:3])
+            # ex_imgs.append(tf_toTensor(ver_img['image']))
+            # exemplars_list.append(ver_img['bboxes'])
+            
 
-            if exemplars:
-                scaler = image.shape[1] / height
-                inputs["exemplars"] = torch.tensor(exemplars) * scaler
+            print("num of ex", len(exemplars_list[0]))
+            import torchvision
+            for i, img in enumerate(ex_imgs):
+                torchvision.utils.save_image(img, f'aug_{i}.png')
+            inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bboxs": exemplars_list}
 
             predictions = self.model([inputs])[0]
             return predictions
