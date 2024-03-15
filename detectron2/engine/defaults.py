@@ -343,32 +343,32 @@ class DefaultPredictor:
             ex_imgs.append(image)
             exemplars_list.append(exemplars)
             
-            rot_input = T.AugInput(image=image_np, boxes=exemplars)
-            rot_transformed = T.AugmentationList([
-                T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
-            ])
-            rot_img = rot_transformed(rot_input)
-            print("rot sahpe", rot_input.image.astype("float32").shape)
-            ex_imgs.append(torch.as_tensor(rot_input.image.astype("float32").transpose(2, 0, 1)))
-            exemplars_list.append(rot_input.boxes)
+            # rot_input = T.AugInput(image=image_np, boxes=exemplars)
+            # rot_transformed = T.AugmentationList([
+            #     T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
+            # ])
+            # rot_img = rot_transformed(rot_input)
+            # print("rot sahpe", rot_input.image.astype("float32").shape)
+            # ex_imgs.append(torch.as_tensor(rot_input.image.astype("float32").transpose(2, 0, 1)))
+            # exemplars_list.append(rot_input.boxes)
             
-            hor_input = T.AugInput(image=image_np, boxes=exemplars)
-            hor_transformed = T.AugmentationList([
-                T.RandomFlip(prob=1, horizontal=True),
-                T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
-            ])
-            hor_img = hor_transformed(hor_input)
-            ex_imgs.append(torch.as_tensor(hor_input.image.astype("float32").transpose(2, 0, 1)))
-            exemplars_list.append(hor_input.boxes)
+            # hor_input = T.AugInput(image=image_np, boxes=exemplars)
+            # hor_transformed = T.AugmentationList([
+            #     T.RandomFlip(prob=1, horizontal=True),
+            #     T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
+            # ])
+            # hor_img = hor_transformed(hor_input)
+            # ex_imgs.append(torch.as_tensor(hor_input.image.astype("float32").transpose(2, 0, 1)))
+            # exemplars_list.append(hor_input.boxes)
             
-            ver_input = T.AugInput(image=image_np, boxes=exemplars)
-            ver_transformed = T.AugmentationList([
-                T.RandomFlip(prob=1, vertical=True, horizontal=False),
-                T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
-            ])
-            ver_img = ver_transformed(ver_input)
-            ex_imgs.append(torch.as_tensor(ver_input.image.astype("float32").transpose(2, 0, 1)))
-            exemplars_list.append(ver_input.boxes)
+            # ver_input = T.AugInput(image=image_np, boxes=exemplars)
+            # ver_transformed = T.AugmentationList([
+            #     T.RandomFlip(prob=1, vertical=True, horizontal=False),
+            #     T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice")
+            # ])
+            # ver_img = ver_transformed(ver_input)
+            # ex_imgs.append(torch.as_tensor(ver_input.image.astype("float32").transpose(2, 0, 1)))
+            # exemplars_list.append(ver_input.boxes)
             
             # temp_img = np.array(tf_toPIL(image))
             
@@ -401,12 +401,8 @@ class DefaultPredictor:
             # ex_imgs.append(tf_toTensor(ver_img['image']))
             # exemplars_list.append(ver_img['bboxes'])
             
-
             print("num of ex", len(exemplars_list[0]))
-            print(ex_imgs[0].max(),ex_imgs[0].min())
-            import torchvision
-            for i, img in enumerate(ex_imgs):
-                torchvision.utils.save_image(img, f'aug_{i}.png')
+            
             inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bboxs": exemplars_list}
 
             predictions = self.model([inputs])[0]
