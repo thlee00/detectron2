@@ -944,7 +944,7 @@ class Visualizer:
         width = x1 - x0
         height = y1 - y0
 
-        linewidth = max(self._default_font_size / 4, 1)
+        linewidth = max(self._default_font_size / 4, 1.5)
 
         self.output.ax.add_patch(
             mpl.patches.Rectangle(

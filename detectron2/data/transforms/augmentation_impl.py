@@ -240,6 +240,8 @@ class ResizeScale(Augmentation):
             target_scale_size[0] / input_size[0], target_scale_size[1] / input_size[1]
         )
         output_size = np.round(np.multiply(input_size, output_scale)).astype(int)
+        
+        print(input_size, target_size, target_scale_size, output_scale, output_size)
 
         return ResizeTransform(
             input_size[0], input_size[1], int(output_size[0]), int(output_size[1]), self.interp
@@ -300,7 +302,7 @@ class RandomRotation(Augmentation):
 
         if angle % 360 == 0:
             return NoOpTransform()
-
+        print("angle ds", angle)
         return RotationTransform(h, w, angle, expand=self.expand, center=center, interp=self.interp)
 
 

@@ -206,6 +206,20 @@ class RotationTransform(Transform):
         assert img.shape[:2] == (self.h, self.w)
         interp = interp if interp is not None else self.interp
         return cv2.warpAffine(img, self.rm_image, (self.bound_w, self.bound_h), flags=interp)
+    
+    # def apply_coords(self, coords):          ### custom apply_coords
+    #     import math
+    #     radians = math.radians(self.angle)
+    #     cos_theta = math.cos(radians)
+    #     sin_theta = math.sin(radians)
+    #     rotated_bbox = []
+    #     for x, y in coords:
+    #         x -= self.center[0]
+    #         y -= self.center[1]
+    #         new_x = x * cos_theta - y * sin_theta + self.center[0]
+    #         new_y = x * sin_theta + y * cos_theta + self.center[1]
+    #         rotated_bbox.append((new_x, new_y))
+    #     return rotated_bbox
 
     def apply_coords(self, coords):
         """
