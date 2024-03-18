@@ -149,14 +149,15 @@ class GeneralizedRCNN(nn.Module):
         if not self.training:
             return self.inference(batched_inputs)
 
-        images, exemplars = self.preprocess_image(batched_inputs)
+        images = self.preprocess_image(batched_inputs)
+        # images, exemplars = self.preprocess_image(batched_inputs)
         if "instances" in batched_inputs[0]:
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
         else:
             gt_instances = None
 
         features = self.backbone(images.tensor)
-        exemplar_features = self.backbone(exemplars.tensor)
+        # exemplar_features = self.backbone(exemplars.tensor)
 
         if self.proposal_generator is not None:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
@@ -207,9 +208,10 @@ class GeneralizedRCNN(nn.Module):
             else:
                 bboxs = None
 
-        images, exemplars = self.preprocess_image(batched_inputs)
+        # images, exemplars = self.preprocess_image(batched_inputs)
+        images = self.preprocess_image(batched_inputs)
         features = self.backbone(images.tensor)
-        exemplar_features = self.backbone(exemplars.tensor)         ### mod: 6. extract augmented image feature
+        # exemplar_features = self.backbone(exemplars.tensor)         ### mod: 6. extract augmented image feature
 
         if detected_instances is None:
             if self.proposal_generator is not None:
@@ -223,7 +225,8 @@ class GeneralizedRCNN(nn.Module):
                 proposals = [x["proposals"].to(self.device) for x in batched_inputs]
 
             ### mod: 7. roi head
-            results, _ = self.roi_heads(images, features, proposals, exemplar_features, bboxs, targets=None)
+            # results, _ = self.roi_heads(images, features, proposals, exemplar_features, bboxs, targets=None)
+            results, _ = self.roi_heads(images, features, proposals, None, bboxs, targets=None)
         else:
             detected_instances = [x.to(self.device) for x in detected_instances]
             results = self.roi_heads.forward_with_given_boxes(features, detected_instances)
@@ -246,15 +249,15 @@ class GeneralizedRCNN(nn.Module):
         )
         
         ### mod: 5. preprocess augmented image
-        for x in batched_inputs:
-            exemplars = [self._move_to_current_device(exemplar) for exemplar in x["exemplars"]]
-        exemplars = [(x - self.pixel_mean) / self.pixel_std for x in exemplars]
-        exemplars = ImageList.from_tensors(
-            exemplars,
-            self.backbone.size_divisibility,
-            padding_constraints=self.backbone.padding_constraints,
-        )
-        return images, exemplars
+        # for x in batched_inputs:
+        #     exemplars = [self._move_to_current_device(exemplar) for exemplar in x["exemplars"]]
+        # exemplars = [(x - self.pixel_mean) / self.pixel_std for x in exemplars]
+        # exemplars = ImageList.from_tensors(
+        #     exemplars,
+        #     self.backbone.size_divisibility,
+        #     padding_constraints=self.backbone.padding_constraints,
+        # )
+        return images #, exemplars
 
     @staticmethod
     def _postprocess(instances, batched_inputs: List[Dict[str, torch.Tensor]], image_sizes):

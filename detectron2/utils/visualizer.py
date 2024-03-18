@@ -690,8 +690,8 @@ class Visualizer:
         for i in range(num_instances):
             color = assigned_colors[i]
             if boxes is not None:
-                if True: ### for circle
-                # if False:
+                # if True: ### for circle
+                if False:
                     self.draw_center(boxes[i], color=color)
                 else:
                     self.draw_box(boxes[i], edge_color=color)
