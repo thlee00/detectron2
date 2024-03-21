@@ -300,7 +300,7 @@ class RandomRotation(Augmentation):
 
         if angle % 360 == 0:
             return NoOpTransform()
-
+        
         return RotationTransform(h, w, angle, expand=self.expand, center=center, interp=self.interp)
 
 
