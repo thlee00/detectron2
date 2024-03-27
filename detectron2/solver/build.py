@@ -139,6 +139,24 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     return maybe_add_gradient_clipping(cfg, torch.optim.SGD(**sgd_args))
 
 
+# def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimizer:
+#     """
+#     Build an optimizer from config.
+#     """
+#     params = get_default_optimizer_params(
+#         model,
+#         base_lr=cfg.SOLVER.BASE_LR,
+#         weight_decay_norm=cfg.SOLVER.WEIGHT_DECAY_NORM,
+#         bias_lr_factor=cfg.SOLVER.BIAS_LR_FACTOR,
+#         weight_decay_bias=cfg.SOLVER.WEIGHT_DECAY_BIAS,
+#     )
+#     return maybe_add_gradient_clipping(cfg, torch.optim.AdamW)(
+#         params,
+#         lr=cfg.SOLVER.BASE_LR,
+#         weight_decay=cfg.SOLVER.WEIGHT_DECAY,
+#     )
+
+
 def get_default_optimizer_params(
     model: torch.nn.Module,
     base_lr: Optional[float] = None,
@@ -228,7 +246,9 @@ def get_default_optimizer_params(
             if isinstance(module, norm_module_types) and weight_decay_norm is not None:
                 hyperparams["weight_decay"] = weight_decay_norm
             if lr_factor_func is not None:
-                hyperparams["lr"] *= lr_factor_func(f"{module_name}.{module_param_name}")
+                hyperparams["lr"] *= lr_factor_func(
+                    f"{module_name}.{module_param_name}"
+                )
 
             hyperparams.update(overrides.get(module_param_name, {}))
             params.append({"params": [value], **hyperparams})
@@ -241,10 +261,14 @@ def _expand_param_groups(params: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     ret = defaultdict(dict)
     for item in params:
         assert "params" in item
-        cur_params = {x: y for x, y in item.items() if x != "params" and x != "param_names"}
+        cur_params = {
+            x: y for x, y in item.items() if x != "params" and x != "param_names"
+        }
         if "param_names" in item:
             for param_name, param in zip(item["param_names"], item["params"]):
-                ret[param].update({"param_names": [param_name], "params": [param], **cur_params})
+                ret[param].update(
+                    {"param_names": [param_name], "params": [param], **cur_params}
+                )
         else:
             for param in item["params"]:
                 ret[param].update({"params": [param], **cur_params})
@@ -261,7 +285,9 @@ def reduce_param_groups(params: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     params = _expand_param_groups(params)
     groups = defaultdict(list)  # re-group all parameter groups by their hyperparams
     for item in params:
-        cur_params = tuple((x, y) for x, y in item.items() if x != "params" and x != "param_names")
+        cur_params = tuple(
+            (x, y) for x, y in item.items() if x != "params" and x != "param_names"
+        )
         groups[cur_params].append({"params": item["params"]})
         if "param_names" in item:
             groups[cur_params][-1]["param_names"] = item["param_names"]
@@ -274,7 +300,9 @@ def reduce_param_groups(params: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         )
         if len(param_values) > 0 and "param_names" in param_values[0]:
             cur["param_names"] = list(
-                itertools.chain.from_iterable([params["param_names"] for params in param_values])
+                itertools.chain.from_iterable(
+                    [params["param_names"] for params in param_values]
+                )
             )
         ret.append(cur)
     return ret

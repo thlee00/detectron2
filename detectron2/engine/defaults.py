@@ -106,18 +106,29 @@ Run on multiple machines:
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--config-file", default="", metavar="FILE", help="path to config file")
+    parser.add_argument(
+        "--config-file", default="", metavar="FILE", help="path to config file"
+    )
     parser.add_argument(
         "--resume",
         action="store_true",
         help="Whether to attempt to resume from the checkpoint directory. "
         "See documentation of `DefaultTrainer.resume_or_load()` for what it means.",
     )
-    parser.add_argument("--eval-only", action="store_true", help="perform evaluation only")
-    parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus *per machine*")
-    parser.add_argument("--num-machines", type=int, default=1, help="total number of machines")
     parser.add_argument(
-        "--machine-rank", type=int, default=0, help="the rank of this machine (unique per machine)"
+        "--eval-only", action="store_true", help="perform evaluation only"
+    )
+    parser.add_argument(
+        "--num-gpus", type=int, default=1, help="number of gpus *per machine*"
+    )
+    parser.add_argument(
+        "--num-machines", type=int, default=1, help="total number of machines"
+    )
+    parser.add_argument(
+        "--machine-rank",
+        type=int,
+        default=0,
+        help="the rank of this machine (unique per machine)",
     )
 
     # PyTorch still may leave orphan processes in multi-gpu training.
@@ -191,7 +202,11 @@ def default_setup(cfg, args):
     setup_logger(output_dir, distributed_rank=rank, name="fvcore")
     logger = setup_logger(output_dir, distributed_rank=rank)
 
-    logger.info("Rank of current process: {}. World size: {}".format(rank, comm.get_world_size()))
+    logger.info(
+        "Rank of current process: {}. World size: {}".format(
+            rank, comm.get_world_size()
+        )
+    )
     logger.info("Environment info:\n" + collect_env_info())
 
     logger.info("Command line arguments: " + str(args))
@@ -199,7 +214,9 @@ def default_setup(cfg, args):
         logger.info(
             "Contents of args.config_file={}:\n{}".format(
                 args.config_file,
-                _highlight(PathManager.open(args.config_file, "r").read(), args.config_file),
+                _highlight(
+                    PathManager.open(args.config_file, "r").read(), args.config_file
+                ),
             )
         )
 
@@ -208,7 +225,9 @@ def default_setup(cfg, args):
         # config.yaml in output directory
         path = os.path.join(output_dir, "config.yaml")
         if isinstance(cfg, CfgNode):
-            logger.info("Running with full config:\n{}".format(_highlight(cfg.dump(), ".yaml")))
+            logger.info(
+                "Running with full config:\n{}".format(_highlight(cfg.dump(), ".yaml"))
+            )
             with PathManager.open(path, "w") as f:
                 f.write(cfg.dump())
         else:
@@ -317,13 +336,15 @@ class DefaultPredictor:
                 # whether the model expects BGR inputs or RGB
                 original_image = original_image[:, :, ::-1]
             height, width = original_image.shape[:2]
-            image_np = self.aug.get_transform(original_image).apply_image(original_image)
+            image_np = self.aug.get_transform(original_image).apply_image(
+                original_image
+            )
             image = torch.as_tensor(image_np.astype("float32").transpose(2, 0, 1))
             image.to(self.cfg.MODEL.DEVICE)
-            
+
             ex_imgs = []
             exemplars_list = []
-            
+
             for exemplar in exemplars.values():
                 ori_ex_img = exemplar["ex_img"]
                 bboxs = exemplar["bboxs"]
@@ -332,61 +353,89 @@ class DefaultPredictor:
                     ori_ex_img = ori_ex_img[:, :, ::-1]
                 h, w = ori_ex_img.shape[:2]
                 ex_image_np = self.aug.get_transform(ori_ex_img).apply_image(ori_ex_img)
-                ex_image = torch.as_tensor(ex_image_np.astype("float32").transpose(2, 0, 1))
+                ex_image = torch.as_tensor(
+                    ex_image_np.astype("float32").transpose(2, 0, 1)
+                )
                 ex_image.to(self.cfg.MODEL.DEVICE)
-                
+
                 scaler = ex_image.shape[1] / h
                 bboxs = torch.tensor(bboxs, dtype=torch.float32)
                 bboxs = bboxs * scaler
                 bboxs = bboxs.tolist()
-                
+
                 ex_imgs.append(ex_image)
                 exemplars_list.append(bboxs)
-                
-                masked_ex_img_np = ex_image_np
-    
+
+                # masked_ex_img_np = ex_image_np
+
                 # rot_input = T.AugInput(image=masked_ex_img_np, boxes=bboxs)
-                # rot_transformed = T.AugmentationList([
-                #     T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice", expand=True)
-                # ])
+                # rot_transformed = T.AugmentationList(
+                #     [
+                #         T.RandomRotation(
+                #             angle=[45, 135, 225, 315],
+                #             sample_style="choice",
+                #             expand=True,
+                #         )
+                #     ]
+                # )
                 # rot_transformed(rot_input)
                 # # print("rot sahpe", rot_input.image.astype("float32").shape)
-                # ex_imgs.append(torch.as_tensor(rot_input.image.astype("float32").transpose(2, 0, 1)))
-                # rot_boxes = process_augmented_boxes(rot_input.boxes)
+                # ex_imgs.append(
+                #     torch.as_tensor(
+                #         rot_input.image.astype("float32").transpose(2, 0, 1)
+                #     )
+                # )
+                # # rot_boxes = process_augmented_boxes(rot_input.boxes)
                 # exemplars_list.append(rot_input.boxes.tolist())
                 # # exemplars_list.append(rot_boxes)
-                    
+
                 # hor_input = T.AugInput(image=masked_ex_img_np, boxes=bboxs)
-                # hor_transformed = T.AugmentationList([
-                #     T.RandomFlip(prob=1, horizontal=True),
-                #     T.RandomRotation(angle=[45, 135], sample_style="choice", expand=True)
-                # ])
+                # hor_transformed = T.AugmentationList(
+                #     [
+                #         T.RandomFlip(prob=1, horizontal=True),
+                #         T.RandomRotation(
+                #             angle=[45, 135], sample_style="choice", expand=True
+                #         ),
+                #     ]
+                # )
                 # hor_transformed(hor_input)
-                # ex_imgs.append(torch.as_tensor(hor_input.image.astype("float32").transpose(2, 0, 1)))
-                # hor_boxes = process_augmented_boxes(hor_input.boxes)
+                # ex_imgs.append(
+                #     torch.as_tensor(
+                #         hor_input.image.astype("float32").transpose(2, 0, 1)
+                #     )
+                # )
+                # # hor_boxes = process_augmented_boxes(hor_input.boxes)
                 # exemplars_list.append(hor_input.boxes.tolist())
                 # # exemplars_list.append(hor_boxes)
-                
+
                 # ver_input = T.AugInput(image=masked_ex_img_np, boxes=bboxs)
-                # ver_transformed = T.AugmentationList([
-                #     T.RandomFlip(prob=1, vertical=True, horizontal=False),
-                #     T.RandomRotation(angle=[45, 135], sample_style="choice", expand=True)
-                # ])
+                # ver_transformed = T.AugmentationList(
+                #     [
+                #         T.RandomFlip(prob=1, vertical=True, horizontal=False),
+                #         T.RandomRotation(
+                #             angle=[45, 135], sample_style="choice", expand=True
+                #         ),
+                #     ]
+                # )
                 # ver_transformed(ver_input)
-                # ex_imgs.append(torch.as_tensor(ver_input.image.astype("float32").transpose(2, 0, 1)))
-                # ver_boxes = process_augmented_boxes(ver_input.boxes)
+                # ex_imgs.append(
+                #     torch.as_tensor(
+                #         ver_input.image.astype("float32").transpose(2, 0, 1)
+                #     )
+                # )
+                # # ver_boxes = process_augmented_boxes(ver_input.boxes)
                 # exemplars_list.append(ver_input.boxes.tolist())
                 # # exemplars_list.append(ver_boxes)
-            
+
             ### mod: 4. for augmentation
             import numpy as np
             from PIL import Image, ImageDraw, ImageFilter
-            
+
             _image_np = image_np
             _image = image
             masked_ex_img = _image
             masked_ex_img_np = _image_np
-            
+
             # if exemplar_image is not None:
             #     if self.input_format == "RGB":
             #         # whether the model expects BGR inputs or RGB
@@ -395,12 +444,12 @@ class DefaultPredictor:
             #     _image_np = self.aug.get_transform(exemplar_image).apply_image(exemplar_image)
             #     _image = torch.as_tensor(_image_np.astype("float32").transpose(2, 0, 1))
             #     _image.to(self.cfg.MODEL.DEVICE)
-                
+
             # ex_img = Image.fromarray(np.array(_image_np))
             # print("Masked ", _image_np.max())
             # mask = Image.new('L', ex_img.size, 0)
             # draw = ImageDraw.Draw(mask)
-            
+
             # for box in exemplars:
             #     draw.rectangle(box, fill=255)
             # mask = mask.filter(ImageFilter.GaussianBlur(radius=1))
@@ -413,7 +462,7 @@ class DefaultPredictor:
             # ### ori exemplar
             # ex_imgs.append(masked_ex_img)
             # exemplars_list.append(exemplars)
-            
+
             # rot_input = T.AugInput(image=masked_ex_img_np, boxes=exemplars)
             # rot_transformed = T.AugmentationList([
             #     T.RandomRotation(angle=[45, 135, 225, 315], sample_style="choice", expand=True)
@@ -424,7 +473,7 @@ class DefaultPredictor:
             # rot_boxes = process_augmented_boxes(rot_input.boxes)
             # exemplars_list.append(rot_input.boxes.tolist())
             # # exemplars_list.append(rot_boxes)
-                
+
             # hor_input = T.AugInput(image=masked_ex_img_np, boxes=exemplars)
             # hor_transformed = T.AugmentationList([
             #     T.RandomFlip(prob=1, horizontal=True),
@@ -435,7 +484,7 @@ class DefaultPredictor:
             # hor_boxes = process_augmented_boxes(hor_input.boxes)
             # exemplars_list.append(hor_input.boxes.tolist())
             # # exemplars_list.append(hor_boxes)
-            
+
             # ver_input = T.AugInput(image=masked_ex_img_np, boxes=exemplars)
             # ver_transformed = T.AugmentationList([
             #     T.RandomFlip(prob=1, vertical=True, horizontal=False),
@@ -457,8 +506,14 @@ class DefaultPredictor:
             #     for box in exemplars_list[i]:
             #         draw.rectangle(box, outline=(255, 0, 0), width=3)
             #     img.save(f'aug_{i}.png')
-            
-            inputs = {"image": image, "height": height, "width": width, "exemplars": ex_imgs, "bboxs": exemplars_list}
+
+            inputs = {
+                "image": image,
+                "height": height,
+                "width": width,
+                "exemplars": ex_imgs,
+                "bboxs": exemplars_list,
+            }
 
             predictions = self.model([inputs])[0]
             return predictions
@@ -576,16 +631,18 @@ class DefaultTrainer(TrainerBase):
         ret = [
             hooks.IterationTimer(),
             hooks.LRScheduler(),
-            hooks.PreciseBN(
-                # Run at the same freq as (but before) evaluation.
-                cfg.TEST.EVAL_PERIOD,
-                self.model,
-                # Build a new data loader to not affect training
-                self.build_train_loader(cfg),
-                cfg.TEST.PRECISE_BN.NUM_ITER,
-            )
-            if cfg.TEST.PRECISE_BN.ENABLED and get_bn_modules(self.model)
-            else None,
+            (
+                hooks.PreciseBN(
+                    # Run at the same freq as (but before) evaluation.
+                    cfg.TEST.EVAL_PERIOD,
+                    self.model,
+                    # Build a new data loader to not affect training
+                    self.build_train_loader(cfg),
+                    cfg.TEST.PRECISE_BN.NUM_ITER,
+                )
+                if cfg.TEST.PRECISE_BN.ENABLED and get_bn_modules(self.model)
+                else None
+            ),
         ]
 
         # Do PreciseBN before checkpointer, because it updates the model and need to
@@ -593,7 +650,11 @@ class DefaultTrainer(TrainerBase):
         # This is not always the best: if checkpointing has a different frequency,
         # some checkpoints may have more precise statistics than others.
         if comm.is_main_process():
-            ret.append(hooks.PeriodicCheckpointer(self.checkpointer, cfg.SOLVER.CHECKPOINT_PERIOD))
+            ret.append(
+                hooks.PeriodicCheckpointer(
+                    self.checkpointer, cfg.SOLVER.CHECKPOINT_PERIOD
+                )
+            )
 
         def test_and_save_results():
             self._last_eval_results = self.test(self.cfg, self.model)
@@ -768,7 +829,9 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
                 ), "Evaluator must return a dict on the main process. Got {} instead.".format(
                     results_i
                 )
-                logger.info("Evaluation results for {} in csv format:".format(dataset_name))
+                logger.info(
+                    "Evaluation results for {} in csv format:".format(dataset_name)
+                )
                 print_csv_format(results_i)
 
         if len(results) == 1:
@@ -831,7 +894,9 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
         bs = cfg.SOLVER.IMS_PER_BATCH = int(round(cfg.SOLVER.IMS_PER_BATCH * scale))
         lr = cfg.SOLVER.BASE_LR = cfg.SOLVER.BASE_LR * scale
         max_iter = cfg.SOLVER.MAX_ITER = int(round(cfg.SOLVER.MAX_ITER / scale))
-        warmup_iter = cfg.SOLVER.WARMUP_ITERS = int(round(cfg.SOLVER.WARMUP_ITERS / scale))
+        warmup_iter = cfg.SOLVER.WARMUP_ITERS = int(
+            round(cfg.SOLVER.WARMUP_ITERS / scale)
+        )
         cfg.SOLVER.STEPS = tuple(int(round(s / scale)) for s in cfg.SOLVER.STEPS)
         cfg.TEST.EVAL_PERIOD = int(round(cfg.TEST.EVAL_PERIOD / scale))
         cfg.SOLVER.CHECKPOINT_PERIOD = int(round(cfg.SOLVER.CHECKPOINT_PERIOD / scale))
